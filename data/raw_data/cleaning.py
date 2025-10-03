@@ -1,8 +1,9 @@
 import pandas as pd
+import numpy as np
 
 # Display settings
 pd.set_option("display.max_columns", None)
-
+pd.set_option("display.max_rows", None)
 # -------------------------------
 # 1. Load raw data
 # -------------------------------
@@ -11,22 +12,21 @@ kiosk_df = pd.read_csv("Austin_MetroBike_Kiosk_Locations_20250925.csv")
 
 weather_df_1 = pd.read_csv("LCD_1.csv")
 weather_df_2 = pd.read_csv("LCD_2.csv")
-weather_df = pd.concat([weather_df_1, weather_df_2])
 
 # -------------------------------
 # 2. Clean weather data
 # -------------------------------
+weather_df = pd.concat([weather_df_1, weather_df_2], axis=0)
+
+# Select only FM-15 reports
+weather_df = weather_df[weather_df["REPORT_TYPE"] == "FM-15"]
+
 weather_df = weather_df[
     [
         "DATE",
-        "REPORT_TYPE",
-        "HourlyAltimeterSetting",
-        "HourlyDewPointTemperature",
+        "HourlyDryBulbTemperature",
         "HourlyPrecipitation",
         "HourlyRelativeHumidity",
-        "HourlySeaLevelPressure",
-        "HourlySkyConditions",
-        "HourlyStationPressure",
         "HourlyVisibility",
         "HourlyWindSpeed",
     ]
@@ -35,53 +35,50 @@ weather_df = weather_df[
 weather_df = weather_df.rename(
     columns={
         "DATE": "date",
-        "REPORT_TYPE": "report_type",
-        "HourlyAltimeterSetting": "hourly_altimeter_setting",
-        "HourlyDewPointTemperature": "hourly_dew_point_temperature",
-        "HourlyPrecipitation": "hourly_precipitation",
-        "HourlyRelativeHumidity": "hourly_relative_humidity",
-        "HourlySeaLevelPressure": "hourly_sea_level_pressure",
-        "HourlySkyConditions": "hourly_sky_conditions",
-        "HourlyStationPressure": "hourly_station_pressure",
-        "HourlyVisibility": "hourly_visibility",
-        "HourlyWindSpeed": "hourly_wind_speed",
+        "HourlyDryBulbTemperature": "temp",
+        "HourlyPrecipitation": "precipitation",
+        "HourlyRelativeHumidity": "humidity",
+        "HourlyVisibility": "visibility",
+        "HourlyWindSpeed": "wind_speed",
     }
 )
 
+# Clean temp column
+weather_df["temp"] = weather_df["temp"].str.replace(r"s$", "", regex=True)
+weather_df = weather_df.replace("*", np.nan)
+
+# Clean precipitation
+weather_df["precipitation"] = weather_df["precipitation"].replace(r"s$", "", regex=True)
+weather_df["precipitation"] = weather_df["precipitation"].replace("T", 0.005)
+
+# Clean visibility
+weather_df["visibility"] = weather_df["visibility"].str.replace(r"V$", "", regex=True)
+weather_df["visibility"] = weather_df["visibility"].str.replace(r"s$", "", regex=True)
+
 # Convert datatypes
 weather_df["date"] = pd.to_datetime(weather_df["date"])
-weather_df["report_type"] = weather_df["report_type"].astype("category")
-weather_df["hourly_altimeter_setting"] = pd.to_numeric(
-    weather_df["hourly_altimeter_setting"], errors="coerce"
-)
-weather_df["hourly_dew_point_temperature"] = pd.to_numeric(
-    weather_df["hourly_dew_point_temperature"], errors="coerce"
-)
-weather_df["hourly_precipitation"] = pd.to_numeric(
-    weather_df["hourly_precipitation"], errors="coerce"
-)
-weather_df["hourly_relative_humidity"] = pd.to_numeric(
-    weather_df["hourly_relative_humidity"], errors="coerce"
-)
-weather_df["hourly_sea_level_pressure"] = pd.to_numeric(
-    weather_df["hourly_sea_level_pressure"], errors="coerce"
-)
-weather_df["hourly_sky_conditions"] = weather_df["hourly_sky_conditions"].astype(
-    "string"
-)
-weather_df["hourly_station_pressure"] = pd.to_numeric(
-    weather_df["hourly_station_pressure"], errors="coerce"
-)
-weather_df["hourly_visibility"] = pd.to_numeric(
-    weather_df["hourly_visibility"], errors="coerce"
-)
-weather_df["hourly_wind_speed"] = pd.to_numeric(
-    weather_df["hourly_wind_speed"], errors="coerce"
-)
+weather_df["temp"] = weather_df["temp"].astype(float)
+weather_df["precipitation"] = weather_df["precipitation"].astype(float)
+weather_df["humidity"] = weather_df["humidity"].astype(float)
+weather_df["visibility"] = weather_df["visibility"].astype(float)
+weather_df["wind_speed"] = weather_df["wind_speed"].astype(float)
 
+weather_df.ffill(inplace=True)
 # -------------------------------
 # 3. Clean trips data
 # -------------------------------
+trips_df = pd.read_csv("Austin_MetroBike_Trips_20250925.csv")
+
+pd.DataFrame(trips_df["Membership or Pass Type"].value_counts())
+
+trips_df["Membership or Pass Type"] = trips_df["Membership or Pass Type"].replace(
+    "U.T. Student Membership", "Student Membership"
+)
+
+
+pd.DataFrame(trips_df["Membership or Pass Type"].value_counts())
+
+
 # Convert columns to categories
 trips_df["pass_type"] = trips_df["Membership or Pass Type"].astype("category")
 trips_df["return_kiosk"] = trips_df["Return Kiosk"].astype("category")
@@ -90,6 +87,7 @@ trips_df["checkout_kiosk"] = trips_df["Checkout Kiosk"].astype("category")
 trips_df["checkout_kiosk_id"] = trips_df["Checkout Kiosk ID"].astype("category")
 trips_df["bike_type"] = trips_df["Bike Type"].astype("category")
 trips_df["checkout_time"] = pd.to_datetime(trips_df["Checkout Datetime"])
+
 
 # Drop unused columns
 trips_df = trips_df.drop(
