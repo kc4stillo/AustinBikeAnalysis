@@ -1,5 +1,7 @@
 import pandas as pd
 
+# danish here 
+
 pd.set_option("display.max_columns", None)
 
 trips_df = pd.read_csv("Austin_MetroBike_Trips_20250925.csv")
