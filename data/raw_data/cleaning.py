@@ -69,7 +69,6 @@ weather_df.ffill(inplace=True)
 # -------------------------------
 # 3. Clean trips data
 # -------------------------------
-trips_df = pd.read_csv("Austin_MetroBike_Trips_20250925.csv")
 
 # Convert columns to categories
 trips_df["pass_type"] = trips_df["Membership or Pass Type"].astype("category")
@@ -255,6 +254,9 @@ trips_df = trips_df[
 # -------------------------------
 # 4. Clean kiosk data
 # -------------------------------
+
+kiosk_df = kiosk_df[["Kiosk ID", "Kiosk Name", "Kiosk Status", "Location", "Address"]]
+
 kiosk_df = kiosk_df.rename(
     columns={
         "Kiosk ID": "kiosk_id",
@@ -262,26 +264,11 @@ kiosk_df = kiosk_df.rename(
         "Kiosk Status": "status",
         "Location": "location",
         "Address": "address",
-        "Alternate Name": "alt_name",
-        "City Asset Number": "city_asset_number",
-        "Property Type": "property_type",
-        "Number of Docks": "num_docks",
-        "Power Type": "power_type",
-        "Footprint Length": "footprint_length",
-        "Footprint Width": "footprint_width",
-        "Notes": "notes",
-        "Council District": "council_district",
-        "Image": "image",
-        "Modified Date": "modified_date",
     }
 )
 
 # Convert datatypes
 kiosk_df["status"] = kiosk_df["status"].astype("category")
-kiosk_df["property_type"] = kiosk_df["property_type"].astype("category")
-kiosk_df["power_type"] = kiosk_df["power_type"].astype("category")
-kiosk_df["council_district"] = kiosk_df["council_district"].astype("category")
-kiosk_df["num_docks"] = kiosk_df["num_docks"].astype("category")
 
 # Extract latitude/longitude
 kiosk_df[["latitude", "longitude"]] = (
@@ -290,36 +277,18 @@ kiosk_df[["latitude", "longitude"]] = (
 kiosk_df["latitude"] = kiosk_df["latitude"].astype(float)
 kiosk_df["longitude"] = kiosk_df["longitude"].astype(float)
 
-# Drop unused columns
-kiosk_df = kiosk_df.drop(
-    labels=[
-        "notes",
-        "image",
-        "modified_date",
-        "location",
-        "footprint_length",
-        "footprint_width",
-        "alt_name",
-    ],
-    axis=1,
-)
+kiosk_df["kiosk_name"] = kiosk_df["kiosk_name"].apply(to_snake_case)
 
-# Reorder columns
-kiosk_df = kiosk_df[
-    [
-        "kiosk_id",
-        "kiosk_name",
-        "status",
-        "latitude",
-        "longitude",
-        "address",
-        "council_district",
-        "num_docks",
-        "power_type",
-        "property_type",
-        "city_asset_number",
-    ]
-]
+# Merge duplicates in kiosk_df by summing 'count' if it exists
+if "count" in kiosk_df.columns:
+    kiosk_df_clean = (
+        kiosk_df.groupby("kiosk_name", as_index=False)["count"]
+        .sum()
+        .sort_values("count", ascending=False)
+    )
+else:
+    kiosk_df_clean = kiosk_df.drop_duplicates(subset=["kiosk_name"])
+
 
 # -------------------------------
 # 5. Save cleaned datasets
