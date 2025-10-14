@@ -281,14 +281,15 @@ kiosk_df["kiosk_name"] = kiosk_df["kiosk_name"].apply(to_snake_case)
 
 # Merge duplicates in kiosk_df by summing 'count' if it exists
 if "count" in kiosk_df.columns:
-    kiosk_df_clean = (
+    kiosk_df = (
         kiosk_df.groupby("kiosk_name", as_index=False)["count"]
         .sum()
         .sort_values("count", ascending=False)
     )
 else:
-    kiosk_df_clean = kiosk_df.drop_duplicates(subset=["kiosk_name"])
+    kiosk_df = kiosk_df.drop_duplicates(subset=["kiosk_name"])
 
+kiosk_df = kiosk_df.drop("")
 
 # -------------------------------
 # 5. Save cleaned datasets
