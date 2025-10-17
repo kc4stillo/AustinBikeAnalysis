@@ -289,7 +289,7 @@ if "count" in kiosk_df.columns:
 else:
     kiosk_df = kiosk_df.drop_duplicates(subset=["kiosk_name"])
 
-kiosk_df = kiosk_df.drop("")
+kiosk_df.drop(labels=["location"], inplace=True, axis=1)
 
 # -------------------------------
 # 5. Save cleaned datasets
