@@ -66,6 +66,10 @@ weather_df["visibility"] = weather_df["visibility"].astype(float)
 weather_df["wind_speed"] = weather_df["wind_speed"].astype(float)
 
 weather_df.ffill(inplace=True)
+
+# round weather column
+weather_df["date"] = weather_df["date"].dt.round("H")
+
 # -------------------------------
 # 3. Clean trips data
 # -------------------------------
@@ -78,7 +82,7 @@ trips_df["checkout_kiosk"] = trips_df["Checkout Kiosk"].astype("category")
 trips_df["checkout_kiosk_id"] = trips_df["Checkout Kiosk ID"].astype("category")
 trips_df["bike_type"] = trips_df["Bike Type"].astype("category")
 trips_df["checkout_time"] = pd.to_datetime(trips_df["Checkout Datetime"])
-
+trips_df["checkout_time"] = trips_df["checkout_time"].dt.round("H")
 
 # Drop unused columns
 trips_df = trips_df.drop(
@@ -188,12 +192,6 @@ trips_df["return_time"] = trips_df["checkout_time"] + pd.to_timedelta(
     trips_df["duration"], unit="m"
 )
 
-# Extract return features
-trips_df["return_date"] = trips_df["return_time"].dt.date
-trips_df["return_hour"] = trips_df["return_time"].dt.hour
-trips_df["return_dayofweek"] = trips_df["return_time"].dt.day_name()
-trips_df["return_month"] = trips_df["return_time"].dt.month_name()
-
 
 def to_snake_case(text):
     text = str(text).lower()  # lowercase and ensure it's a string
@@ -242,10 +240,6 @@ trips_df = trips_df[
         "checkout_kiosk",
         # Return info
         "return_time",
-        "return_date",
-        "return_hour",
-        "return_dayofweek",
-        "return_month",
         "return_kiosk_id",
         "return_kiosk",
     ]
