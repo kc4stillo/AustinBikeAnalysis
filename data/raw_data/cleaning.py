@@ -187,11 +187,6 @@ trips_df["checkout_hour"] = trips_df["checkout_time"].dt.hour
 trips_df["checkout_dayofweek"] = trips_df["checkout_time"].dt.day_name()
 trips_df["checkout_month"] = trips_df["checkout_time"].dt.month_name()
 
-# Calculate return_time by adding duration (in minutes)
-trips_df["return_time"] = trips_df["checkout_time"] + pd.to_timedelta(
-    trips_df["duration"], unit="m"
-)
-
 
 def to_snake_case(text):
     text = str(text).lower()  # lowercase and ensure it's a string
@@ -239,16 +234,14 @@ trips_df = trips_df[
         "checkout_kiosk_id",
         "checkout_kiosk",
         # Return info
-        "return_time",
         "return_kiosk_id",
         "return_kiosk",
     ]
 ]
-
+trips_df.dtypes
 # -------------------------------
 # 4. Clean kiosk data
 # -------------------------------
-
 kiosk_df = kiosk_df[["Kiosk ID", "Kiosk Name", "Kiosk Status", "Location", "Address"]]
 
 kiosk_df = kiosk_df.rename(
